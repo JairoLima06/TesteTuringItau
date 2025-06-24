@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "nome": "Jairo",
+      "senha": "Senha@123",
+      "conta": "001",
+      "saldo": 400
+    },
+    {
+      "id": 2,
+      "nome": "Maria",
+      "senha": "Maria@321",
+      "conta": "002",
+      "saldo": 12200
+    }
+  ]
+}

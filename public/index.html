@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Teste Turing Itaú - Transferências</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #e46c0a;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #ff9641;
+    }
+    form {
+      background: #ff9641;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(255, 255, 255, 0.1);
+    }
+    input, select, button {
+      width: 100%;
+      padding: 12px 0px;
+      margin: 8px 0 16px;
+      border: 3px solid #e46c0a;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #853c00;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #853c00;
+    }
+    .message {
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .message.success {
+      background-color: #6af28a;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .message.error {
+      background-color: #e53b49;
+      color: #ffffff;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Teste Turing Itaú</h1>
+
+  <form id="login-form">
+    <h2>Login</h2>
+    <input name="nome" placeholder="Nome" required autocomplete="off" />
+    <input name="senha" type="password" placeholder="Senha" required autocomplete="off" />
+    <button type="submit">Entrar</button>
+  </form>
+
+  <form id="transfer-form" style="display:none;">
+    <h2>Realizar Transferência</h2>
+    <input name="contaOrigem" placeholder="Conta Origem" required autocomplete="off" />
+    <input name="contaDestino" placeholder="Conta Destino" required autocomplete="off" />
+    <input name="valor" type="number" min="0.01" step="0.01" placeholder="Valor (R$)" required />
+    <select name="tipo" required>
+      <option value="">Selecione o tipo</option>
+      <option value="PIX">PIX (até R$ 5.000)</option>
+      <option value="TED">TED (entre R$ 5.000,01 e R$ 10.000)</option>
+      <option value="DOC">DOC (acima de R$ 10.000)</option>
+    </select>
+    <button type="submit">Transferir</button>
+  </form>
+
+  <div id="message" class="message"></div>
+
+  <script>
+    const apiUrl = 'http://localhost:3000';
+    const loginForm = document.getElementById('login-form');
+    const transferForm = document.getElementById('transfer-form');
+    const messageBox = document.getElementById('message');
+
+    function showMessage(text, type = 'success') {
+      messageBox.textContent = text;
+      messageBox.className = `message ${type}`;
+      messageBox.style.display = 'block';
+    }
+
+    function hideMessage() {
+      messageBox.style.display = 'none';
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessage();
+
+      const data = {
+        nome: e.target.nome.value.trim(),
+        senha: e.target.senha.value.trim()
+      };
+
+      try {
+        const res = await fetch(`${apiUrl}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const json = await res.json();
+
+        if (!res.ok) {
+          showMessage(json.erro || 'Erro no login', 'error');
+          return;
+        }
+
+        showMessage('Login realizado com sucesso!', 'success');
+        loginForm.style.display = 'none';
+        transferForm.style.display = 'block';
+        // Preenche contaOrigem automaticamente após login
+        transferForm.contaOrigem.value = json.usuario.conta;
+      } catch {
+        showMessage('Erro ao conectar com o servidor.', 'error');
+      }
+    });
+
+    transferForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessage();
+
+      const data = {
+        contaOrigem: e.target.contaOrigem.value.trim(),
+        contaDestino: e.target.contaDestino.value.trim(),
+        valor: parseFloat(e.target.valor.value),
+        tipo: e.target.tipo.value
+      };
+
+      try {
+        const res = await fetch(`${apiUrl}/transferir`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const json = await res.json();
+
+        if (!res.ok) {
+          showMessage(json.erro || 'Erro na transferência', 'error');
+          return;
+        }
+
+        showMessage(
+          `Sua transferência foi realizada com sucesso!\nSaldo do emissor: R$ ${json.saldoEmissor.toFixed(2)}\nSaldo do receptor: R$ ${json.saldoReceptor.toFixed(2)}`,
+          'success'
+        );
+      } catch {
+        showMessage('Erro ao conectar com o servidor.', 'error');
+      }
+    });
+  </script>
+
+</body>
+</html>
