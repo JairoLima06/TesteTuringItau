@@ -2,10 +2,22 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
-import { getDatabase } from './utils/database';
+import fs from 'fs';
 
 const app = express();
 const port = 3000;
+
+// Caminho do arquivo JSON
+const dbPath = path.resolve(__dirname, '../database.json');
+
+function getDatabase() {
+  const data = fs.readFileSync(dbPath, 'utf-8');
+  return JSON.parse(data);
+}
+
+function saveDatabase(db: any) {
+  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf-8');
+}
 
 app.use(cors());
 app.use(express.json());
@@ -84,6 +96,9 @@ app.post('/transferir', (req: Request, res: Response) => {
   // Realizar transferência
   emissor.saldo -= valor;
   receptor.saldo += valor;
+
+  // Salvar alterações no arquivo JSON
+  saveDatabase(db);
 
   return res.status(200).json({
     mensagem: 'Sua transferência foi realizada com sucesso!',
